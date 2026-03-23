@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEM Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Anybody:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #050505;
+  --surface: #0a0a0a;
+  --border: #1a1a1a;
+  --border-hi: #2a2a2a;
+  --text: #ffffff;
+  --text-dim: #aaa;
+  --text-faint: #777;
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Anybody', sans-serif;
+  --green: #4ade80;
+  --red: #f87171;
+  --amber: #fbbf24;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ---- LAYOUT ---- */
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 1px;
+  background: var(--border);
+  min-height: 100vh;
+}
+
+.dash-header {
+  grid-column: 1 / -1;
+  background: var(--bg);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dash-header h1 {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 26px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.pulse {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ---- PANELS ---- */
+.panel {
+  background: var(--surface);
+  padding: 16px 20px;
+  position: relative;
+}
+
+.panel-label {
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-label .count {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* ---- TABLES ---- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+  padding: 4px 8px 8px 0;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+th.r, td.r { text-align: right; }
+
+td {
+  padding: 9px 10px 9px 0;
+  border-bottom: 1px solid #0f0f0f;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+tr.tier1 td:first-child {
+  border-left: 2px solid var(--amber);
+  padding-left: 8px;
+}
+
+tr:hover td {
+  background: #0e0e0e;
+}
+
+.ticker {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.side-long { color: var(--green); }
+.side-short { color: var(--red); }
+.tier-badge {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+.tier-1 { background: rgba(251,191,36,0.15); color: var(--amber); }
+.tier-2 { background: rgba(212,212,212,0.08); color: var(--text-dim); }
+
+/* ---- EXPANDABLE ROW ---- */
+.expand-row td {
+  padding: 0;
+  border-bottom: 1px solid var(--border);
+}
+.expand-content {
+  padding: 12px 14px 16px 12px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text-dim);
+  background: #080808;
+}
+.expand-content .field {
+  display: inline-block;
+  margin-right: 16px;
+}
+.expand-content .field-label {
+  color: var(--text-dim);
+  margin-right: 4px;
+}
+.expand-content .explain {
+  display: block;
+  margin-top: 6px;
+  color: #999;
+  font-style: italic;
+}
+
+/* ---- SIDEBAR ---- */
+.sidebar {
+  grid-column: 2;
+  grid-row: 2 / 5;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+}
+
+.sidebar .panel {
+  flex: none;
+}
+
+.sidebar .panel:last-child {
+  flex: 1;
+}
+
+.watchlist-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #0f0f0f;
+  font-size: 14px;
+}
+
+.watchlist-item .wl-ticker {
+  font-weight: 600;
+}
+
+.tag {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: rgba(212,212,212,0.06);
+  color: var(--text-dim);
+  display: inline-block;
+  margin: 2px 3px 2px 0;
+}
+
+/* ---- ES/MES ---- */
+.es-level {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #0f0f0f;
+  font-size: 14px;
+}
+
+.es-label {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* ---- NEWS ---- */
+.news-item {
+  padding: 6px 0;
+  border-bottom: 1px solid #0f0f0f;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.news-item .news-time {
+  color: var(--text-faint);
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+/* ---- MAIN AREA ---- */
+.main-area {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+}
+
+/* ---- FILTER BAR ---- */
+.filter-bar {
+  background: var(--surface);
+  padding: 10px 20px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.filter-btn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  border-bottom: 1px solid transparent;
+  transition: all 0.15s;
+}
+
+.filter-btn.active {
+  color: var(--text);
+  border-bottom-color: var(--text);
+}
+
+.filter-btn:hover {
+  color: var(--text-dim);
+}
+
+/* ---- SETTINGS PANEL ---- */
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.settings-row label {
+  color: var(--text-dim);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.settings-row input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 5px 8px;
+  width: 90px;
+  border-radius: 2px;
+}
+
+.settings-row input:focus {
+  outline: none;
+  border-color: var(--border-hi);
+}
+
+/* ---- EMPTY STATE ---- */
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+.empty .big {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 900px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+/* ---- LOAD ANIMATION ---- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+</style>
+</head>
+<body>
+
+<div class="dashboard" id="app">
+  <!-- HEADER -->
+  <div class="dash-header">
+    <h1>FEM Dashboard</h1>
+    <div class="header-status">
+      <span id="lastUpdate">No data loaded</span>
+      <span id="autoRefreshLabel" style="display:none"><span class="pulse"></span> Auto-refresh</span>
+      <button class="filter-btn" onclick="loadFromFile()" style="border:1px solid var(--border-hi);padding:4px 10px;border-radius:2px;">Load CSV</button>
+    </div>
+  </div>
+
+  <!-- FILTER BAR + MAIN CONTENT -->
+  <div class="main-area">
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn" data-filter="tier1" onclick="setFilter('tier1',this)">Tier 1</button>
+      <button class="filter-btn" data-filter="long" onclick="setFilter('long',this)">Long</button>
+      <button class="filter-btn" data-filter="short" onclick="setFilter('short',this)">Short</button>
+      <div style="flex:1"></div>
+      <div class="settings-row">
+        <label>Risk $</label>
+        <input type="number" id="riskInput" value="100" onchange="recalcShares()">
+      </div>
+    </div>
+
+    <!-- PENNY STOCKS LONG -->
+    <div class="panel" id="longPanel">
+      <div class="panel-label">Long setups <span class="count" id="longCount"></span></div>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Ticker</th>
+            <th>Side</th>
+            <th>Interaction</th>
+            <th class="r">Entry</th>
+            <th class="r">Stop</th>
+            <th class="r">Tgt 1</th>
+            <th class="r">Tgt 2</th>
+            <th class="r">Risk</th>
+            <th class="r">Shares</th>
+            <th class="r">Vel</th>
+          </tr>
+        </thead>
+        <tbody id="longBody"></tbody>
+      </table>
+    </div>
+
+    <!-- PENNY STOCKS SHORT -->
+    <div class="panel" id="shortPanel">
+      <div class="panel-label">Short setups <span class="count" id="shortCount"></span></div>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Ticker</th>
+            <th>Side</th>
+            <th>Interaction</th>
+            <th class="r">Entry</th>
+            <th class="r">Stop</th>
+            <th class="r">Tgt 1</th>
+            <th class="r">Tgt 2</th>
+            <th class="r">Risk</th>
+            <th class="r">Shares</th>
+            <th class="r">Vel</th>
+          </tr>
+        </thead>
+        <tbody id="shortBody"></tbody>
+      </table>
+    </div>
+
+    <!-- NEWS -->
+    <div class="panel">
+      <div class="panel-label">Major news</div>
+      <div id="newsArea">
+        <textarea id="newsInput" rows="3" placeholder="Type notes here... earnings, fed, macro catalysts..."
+          style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:14px;padding:10px;resize:vertical;border-radius:2px;"
+          oninput="saveNotes()"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <!-- ES/MES -->
+    <div class="panel">
+      <div class="panel-label">ES / MES levels</div>
+      <div id="esArea">
+        <textarea id="esInput" rows="6" placeholder="Paste levels here...&#10;5820 — key support&#10;5850 — trapped shorts&#10;5880 — gap wall resistance"
+          style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:14px;padding:10px;resize:vertical;border-radius:2px;line-height:1.6;"
+          oninput="saveNotes()"></textarea>
+      </div>
+    </div>
+
+    <!-- WATCHLIST -->
+    <div class="panel">
+      <div class="panel-label">Watchlist / interest</div>
+      <div id="watchlistArea">
+        <textarea id="watchlistInput" rows="6" placeholder="XYL — watching for gap fill&#10;OXY — momentum&#10;MWD — continuation"
+          style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:14px;padding:10px;resize:vertical;border-radius:2px;line-height:1.6;"
+          oninput="saveNotes()"></textarea>
+      </div>
+    </div>
+
+    <!-- SECTOR TAGS -->
+    <div class="panel">
+      <div class="panel-label">Sector focus</div>
+      <div id="sectorArea">
+        <textarea id="sectorInput" rows="3" placeholder="Mega Banks, AIO/SPY, Copper, Nuclear..."
+          style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:14px;padding:10px;resize:vertical;border-radius:2px;"
+          oninput="saveNotes()"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HIDDEN FILE INPUT -->
+<input type="file" id="fileInput" accept=".csv" style="display:none" onchange="handleFile(event)">
+
+<script>
+// ============================================================
+// CONFIG — CHANGE THIS TO YOUR GITHUB RAW URL
+// ============================================================
+const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/ideggplant/FEM-Dashboard-/main/data/FEM_EXECUTION_DASHBOARD_LATEST.csv';
+const AUTO_REFRESH_MS = 60000; // refresh every 60 seconds (set to 0 to disable)
+
+// ============================================================
+// STATE
+// ============================================================
+let allTrades = [];
+let currentFilter = 'all';
+let riskDollars = 100;
+let expandedRows = new Set();
+
+// ============================================================
+// CSV PARSER (no dependencies)
+// ============================================================
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+    const row = {};
+    headers.forEach((h, j) => { row[h] = vals[j] || ''; });
+    rows.push(row);
+  }
+  return rows;
+}
+
+function rowToTrade(r) {
+  return {
+    ticker: r.ticker || '',
+    timestamp: r.timestamp || '',
+    tier: r.tier_live_v2 || '',
+    side: r.trade_side_refined_v6 || '',
+    interaction: r.interaction_state || '',
+    lastClose: parseFloat(r.last_close) || 0,
+    distance: parseFloat(r.distance_to_structure) || 0,
+    velocity: r.velocity_band || '',
+    entry: parseFloat(r.entry) || 0,
+    stop: parseFloat(r.stop) || 0,
+    t1: parseFloat(r.target_1) || 0,
+    t2: parseFloat(r.target_2) || 0,
+    risk: parseFloat(r.risk_per_share) || 0,
+    rr1: parseFloat(r.rr_target_1) || 0,
+    rr2: parseFloat(r.rr_target_2) || 0,
+    shares: parseInt(r.shares_at_100_risk) || 0,
+    status: r.execution_status || '',
+  };
+}
+
+// ============================================================
+// DATA LOADING
+// ============================================================
+async function fetchFromGitHub() {
+  try {
+    const resp = await fetch(GITHUB_RAW_URL + '?t=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const text = await resp.text();
+    const rows = parseCSV(text);
+    allTrades = rows.map(rowToTrade);
+    recalcShares();
+    render();
+    document.getElementById('lastUpdate').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    document.getElementById('autoRefreshLabel').style.display = 'flex';
+  } catch (e) {
+    console.log('GitHub fetch failed (expected if URL not configured):', e.message);
+  }
+}
+
+function loadFromFile() {
+  document.getElementById('fileInput').click();
+}
+
+function handleFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const rows = parseCSV(e.target.result);
+    allTrades = rows.map(rowToTrade);
+    recalcShares();
+    render();
+    document.getElementById('lastUpdate').textContent = 'Loaded ' + file.name + ' at ' + new Date().toLocaleTimeString();
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ============================================================
+// FILTERS
+// ============================================================
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn[data-filter]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function getFiltered() {
+  return allTrades.filter(t => {
+    if (currentFilter === 'tier1') return t.tier === 'Tier 1';
+    if (currentFilter === 'long') return t.side === 'Long';
+    if (currentFilter === 'short') return t.side === 'Short';
+    return true;
+  });
+}
+
+// ============================================================
+// RISK RECALC
+// ============================================================
+function recalcShares() {
+  riskDollars = parseFloat(document.getElementById('riskInput').value) || 100;
+  allTrades.forEach(t => {
+    t.shares = t.risk > 0 ? Math.floor(riskDollars / t.risk) : 0;
+  });
+  render();
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function f(n) { return n.toFixed(2); }
+
+function buildRow(t, idx) {
+  const isTier1 = t.tier === 'Tier 1';
+  const isExpanded = expandedRows.has(idx);
+  const sideClass = t.side === 'Long' ? 'side-long' : 'side-short';
+  const tierClass = isTier1 ? 'tier-1' : 'tier-2';
+  const tierLabel = isTier1 ? '1' : '2';
+
+  let html = `<tr class="${isTier1 ? 'tier1' : ''}" onclick="toggleRow(${idx})" style="cursor:pointer">
+    <td><span class="tier-badge ${tierClass}">${tierLabel}</span></td>
+    <td class="ticker">${t.ticker}</td>
+    <td class="${sideClass}">${t.side}</td>
+    <td style="font-size:13px;color:var(--text-dim);max-width:180px;overflow:hidden;text-overflow:ellipsis">${t.interaction}</td>
+    <td class="r">${f(t.entry)}</td>
+    <td class="r" style="color:var(--red)">${f(t.stop)}</td>
+    <td class="r" style="color:var(--green)">${f(t.t1)}</td>
+    <td class="r" style="color:var(--green)">${f(t.t2)}</td>
+    <td class="r">${f(t.risk)}</td>
+    <td class="r" style="font-weight:600">${t.shares}</td>
+    <td class="r" style="color:var(--text-dim);font-size:13px">${t.velocity}</td>
+  </tr>`;
+
+  if (isExpanded) {
+    const verb = t.side === 'Long' ? 'Buy' : 'Short';
+    const stopVerb = t.side === 'Long' ? 'drops' : 'rises';
+    html += `<tr class="expand-row"><td colspan="11"><div class="expand-content fade-in">
+      <span class="field"><span class="field-label">R:R T1</span>${t.rr1}x</span>
+      <span class="field"><span class="field-label">R:R T2</span>${t.rr2}x</span>
+      <span class="field"><span class="field-label">$ at risk</span>$${(t.risk * t.shares).toFixed(0)}</span>
+      <span class="field"><span class="field-label">Distance</span>${f(t.distance)}</span>
+      <span class="field"><span class="field-label">Last close</span>${f(t.lastClose)}</span>
+      <span class="field"><span class="field-label">Signal</span>${t.timestamp}</span>
+      <span class="explain">${verb} ${t.shares} shares at $${f(t.entry)}. If price ${stopVerb} to $${f(t.stop)}, exit. First target $${f(t.t1)}, stretch $${f(t.t2)}.</span>
+    </div></td></tr>`;
+  }
+
+  return html;
+}
+
+function toggleRow(idx) {
+  if (expandedRows.has(idx)) expandedRows.delete(idx);
+  else expandedRows.add(idx);
+  render();
+}
+
+function render() {
+  const filtered = getFiltered();
+  const longs = filtered.filter(t => t.side === 'Long');
+  const shorts = filtered.filter(t => t.side === 'Short');
+
+  document.getElementById('longCount').textContent = longs.length;
+  document.getElementById('shortCount').textContent = shorts.length;
+
+  let longHtml = '';
+  longs.forEach((t, i) => { longHtml += buildRow(t, allTrades.indexOf(t)); });
+  document.getElementById('longBody').innerHTML = longHtml || '<tr><td colspan="11" style="color:var(--text-faint);padding:20px;text-align:center">No long setups</td></tr>';
+
+  let shortHtml = '';
+  shorts.forEach((t, i) => { shortHtml += buildRow(t, allTrades.indexOf(t)); });
+  document.getElementById('shortBody').innerHTML = shortHtml || '<tr><td colspan="11" style="color:var(--text-faint);padding:20px;text-align:center">No short setups</td></tr>';
+
+  // Show/hide panels based on filter
+  document.getElementById('longPanel').style.display = (currentFilter === 'short') ? 'none' : 'block';
+  document.getElementById('shortPanel').style.display = (currentFilter === 'long') ? 'none' : 'block';
+}
+
+// ============================================================
+// NOTES PERSISTENCE (localStorage)
+// ============================================================
+function saveNotes() {
+  const data = {
+    es: document.getElementById('esInput').value,
+    watchlist: document.getElementById('watchlistInput').value,
+    sector: document.getElementById('sectorInput').value,
+    news: document.getElementById('newsInput').value,
+  };
+  localStorage.setItem('fem_dashboard_notes', JSON.stringify(data));
+}
+
+function loadNotes() {
+  try {
+    const data = JSON.parse(localStorage.getItem('fem_dashboard_notes'));
+    if (data) {
+      document.getElementById('esInput').value = data.es || '';
+      document.getElementById('watchlistInput').value = data.watchlist || '';
+      document.getElementById('sectorInput').value = data.sector || '';
+      document.getElementById('newsInput').value = data.news || '';
+    }
+  } catch (e) {}
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadNotes();
+render();
+fetchFromGitHub();
+
+if (AUTO_REFRESH_MS > 0) {
+  setInterval(fetchFromGitHub, AUTO_REFRESH_MS);
+}
+</script>
+
+</body>
+</html>
