@@ -1,2 +1,4 @@
 ticker,timestamp,tier_live_v2,trade_side_refined_v6,interaction_state,last_close,distance_to_structure,velocity_band,entry,stop,target_1,target_2,risk_per_share,rr_target_1,rr_target_2,shares_at_100_risk,execution_status
+BE,2026-03-20 13:30:00,Tier 2,Long,Acceptance through upper edge,165.30999755859375,3.3699975585937523,Slow,165.558,164.3785,167.3272,169.0965,1.1795,1.5,3.0,84,Ready
+STX,2026-03-20 13:30:00,Tier 2,Long,Acceptance through upper edge,438.489990234375,2.559990234374993,Slow,439.1477,437.3938,441.7787,444.4096,1.754,1.5,3.0,57,Ready
 PBF,2026-03-19 14:00:00,Tier 2,Long,Acceptance through upper edge,49.880001068115234,2.4000010681152375,Slow,49.9548,49.3313,50.8901,51.8253,0.6235,1.5,3.0,160,Ready
