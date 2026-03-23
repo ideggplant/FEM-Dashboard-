@@ -521,17 +521,17 @@ function rowToTrade(r) {
     tier: r.tier_live_v2 || '',
     side: r.trade_side_refined_v6 || '',
     interaction: r.interaction_state || '',
-    lastClose: parseFloat(r.last_close) || 0,
-    distance: parseFloat(r.distance_to_structure) || 0,
+    lastClose: r.last_close || '',
+    distance: r.distance_to_structure || '',
     velocity: r.velocity_band || '',
-    entry: parseFloat(r.entry) || 0,
-    stop: parseFloat(r.stop) || 0,
-    t1: parseFloat(r.target_1) || 0,
-    t2: parseFloat(r.target_2) || 0,
-    risk: parseFloat(r.risk_per_share) || 0,
-    rr1: parseFloat(r.rr_target_1) || 0,
-    rr2: parseFloat(r.rr_target_2) || 0,
-    shares: parseInt(r.shares_at_100_risk) || 0,
+    entry: r.entry || '',
+    stop: r.stop || '',
+    t1: r.target_1 || '',
+    t2: r.target_2 || '',
+    risk: r.risk_per_share || '',
+    rr1: r.rr_target_1 || '',
+    rr2: r.rr_target_2 || '',
+    shares: r.shares_at_100_risk || '',
     status: r.execution_status || '',
   };
 }
@@ -597,18 +597,13 @@ function getFiltered() {
 // RISK RECALC
 // ============================================================
 function recalcShares() {
-  riskDollars = parseFloat(document.getElementById('riskInput').value) || 100;
-  allTrades.forEach(t => {
-    t.shares = t.risk > 0 ? Math.floor(riskDollars / t.risk) : 0;
-  });
+  // no-op: shares come from the CSV as-is
   render();
 }
 
 // ============================================================
 // RENDER
 // ============================================================
-function f(n) { return n.toFixed(2); }
-
 function buildRow(t, idx) {
   const isTier1 = t.tier === 'Tier 1';
   const isExpanded = expandedRows.has(idx);
@@ -621,11 +616,11 @@ function buildRow(t, idx) {
     <td class="ticker">${t.ticker}</td>
     <td class="${sideClass}">${t.side}</td>
     <td style="font-size:13px;color:var(--text-dim);max-width:180px;overflow:hidden;text-overflow:ellipsis">${t.interaction}</td>
-    <td class="r">${f(t.entry)}</td>
-    <td class="r" style="color:var(--red)">${f(t.stop)}</td>
-    <td class="r" style="color:var(--green)">${f(t.t1)}</td>
-    <td class="r" style="color:var(--green)">${f(t.t2)}</td>
-    <td class="r">${f(t.risk)}</td>
+    <td class="r">${t.entry}</td>
+    <td class="r" style="color:var(--red)">${t.stop}</td>
+    <td class="r" style="color:var(--green)">${t.t1}</td>
+    <td class="r" style="color:var(--green)">${t.t2}</td>
+    <td class="r">${t.risk}</td>
     <td class="r" style="font-weight:600">${t.shares}</td>
     <td class="r" style="color:var(--text-dim);font-size:13px">${t.velocity}</td>
   </tr>`;
@@ -636,11 +631,12 @@ function buildRow(t, idx) {
     html += `<tr class="expand-row"><td colspan="11"><div class="expand-content fade-in">
       <span class="field"><span class="field-label">R:R T1</span>${t.rr1}x</span>
       <span class="field"><span class="field-label">R:R T2</span>${t.rr2}x</span>
-      <span class="field"><span class="field-label">$ at risk</span>$${(t.risk * t.shares).toFixed(0)}</span>
-      <span class="field"><span class="field-label">Distance</span>${f(t.distance)}</span>
-      <span class="field"><span class="field-label">Last close</span>${f(t.lastClose)}</span>
+      <span class="field"><span class="field-label">Risk</span>${t.risk}</span>
+      <span class="field"><span class="field-label">Distance</span>${t.distance}</span>
+      <span class="field"><span class="field-label">Last close</span>${t.lastClose}</span>
+      <span class="field"><span class="field-label">Last close</span>${t.lastClose}</span>
       <span class="field"><span class="field-label">Signal</span>${t.timestamp}</span>
-      <span class="explain">${verb} ${t.shares} shares at $${f(t.entry)}. If price ${stopVerb} to $${f(t.stop)}, exit. First target $${f(t.t1)}, stretch $${f(t.t2)}.</span>
+      <span class="explain">${verb} ${t.shares} shares at $${t.entry}. If price ${stopVerb} to $${t.stop}, exit. First target $${t.t1}, stretch $${t.t2}.</span>
     </div></td></tr>`;
   }
 
