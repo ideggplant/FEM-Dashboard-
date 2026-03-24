@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEM Penny Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Anybody:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #050505;
+  --surface: #0a0a0a;
+  --border: #1a1a1a;
+  --border-hi: #2a2a2a;
+  --text: #ffffff;
+  --text-dim: #aaa;
+  --text-faint: #777;
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Anybody', sans-serif;
+  --green: #4ade80;
+  --red: #f87171;
+  --amber: #fbbf24;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+  padding: 0;
+}
+.dash {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+.dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.dash-header h1 {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 26px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+.fbtn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 0;
+  border-bottom: 1px solid transparent;
+}
+.fbtn.on { color: var(--text); border-bottom-color: var(--text); }
+.fbtn:hover { color: var(--text-dim); }
+.count-bar {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+}
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+  padding: 6px 12px 8px 0;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+}
+th.r, td.r { text-align: right; }
+td {
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid #111;
+  color: var(--text);
+}
+tr:hover td { background: #0e0e0e; }
+tr.t1 td:first-child { border-left: 2px solid var(--amber); padding-left: 8px; }
+.ticker { font-weight: 600; letter-spacing: 0.3px; }
+.long { color: var(--green); }
+.short { color: var(--red); }
+.badge { font-size: 11px; padding: 2px 7px; border-radius: 2px; font-weight: 600; }
+.b1 { background: rgba(251,191,36,0.15); color: var(--amber); }
+.b2 { background: rgba(212,212,212,0.08); color: var(--text-dim); }
+.b3 { background: rgba(212,212,212,0.04); color: var(--text-faint); }
+.load-btn {
+  background: none;
+  border: 1px solid var(--border-hi);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.load-btn:hover { color: var(--text); border-color: var(--text-faint); }
+.empty { padding: 40px; text-align: center; color: var(--text-faint); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="dash">
+  <div class="dash-header">
+    <h1>FEM Penny Board</h1>
+    <div class="header-right">
+      <span id="status">No data loaded</span>
+      <span id="autoLabel" style="display:none"><span class="pulse"></span> Live</span>
+      <button class="load-btn" onclick="document.getElementById('fi').click()">Load CSV</button>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <button class="fbtn on" data-f="all" onclick="filt('all',this)">All</button>
+    <button class="fbtn" data-f="t1" onclick="filt('t1',this)">Tier 1</button>
+    <button class="fbtn" data-f="t2" onclick="filt('t2',this)">Tier 2</button>
+    <button class="fbtn" data-f="long" onclick="filt('long',this)">Long</button>
+    <button class="fbtn" data-f="short" onclick="filt('short',this)">Short</button>
+  </div>
+
+  <div class="count-bar" id="counts"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Ticker</th>
+        <th>Side</th>
+        <th class="r">Entry</th>
+        <th class="r">Stop</th>
+        <th class="r">T1</th>
+        <th class="r">T2</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<input type="file" id="fi" accept=".csv" style="display:none" onchange="loadFile(event)">
+
+<script>
+const DATA_URL = 'https://raw.githubusercontent.com/ideggplant/FEM-Dashboard-/main/data/FEM_PENNY_DASHBOARD_LATEST.csv';
+const REFRESH = 60000;
+let trades = [];
+let filter = 'all';
+
+function parseCSV(t) {
+  const lines = t.trim().split('\n');
+  if (lines.length < 2) return [];
+  const h = lines[0].split(',').map(x => x.trim().replace(/"/g,''));
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const v = lines[i].split(',').map(x => x.trim().replace(/"/g,''));
+    const r = {};
+    h.forEach((k,j) => { r[k] = v[j] || ''; });
+    rows.push(r);
+  }
+  return rows;
+}
+
+function toTrade(r) {
+  return {
+    ticker: r.ticker || '',
+    tier: r.tier_live_v2 || '',
+    side: r.trade_side_refined_v6 || '',
+    entry: r.entry || '',
+    stop: r.stop || '',
+    t1: r.target_1 || '',
+    t2: r.target_2 || '',
+  };
+}
+
+async function fetchData() {
+  try {
+    const resp = await fetch(DATA_URL + '?t=' + Date.now());
+    if (!resp.ok) throw new Error(resp.status);
+    const text = await resp.text();
+    trades = parseCSV(text).map(toTrade);
+    render();
+    document.getElementById('status').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    document.getElementById('autoLabel').style.display = 'flex';
+  } catch(e) { console.log('Fetch failed:', e.message); }
+}
+
+function loadFile(ev) {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = function(e) {
+    trades = parseCSV(e.target.result).map(toTrade);
+    render();
+    document.getElementById('status').textContent = 'Loaded ' + f.name;
+  };
+  r.readAsText(f);
+  ev.target.value = '';
+}
+
+function filt(f, btn) {
+  filter = f;
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  render();
+}
+
+function getFiltered() {
+  return trades.filter(t => {
+    if (filter === 't1') return t.tier === 'Tier 1';
+    if (filter === 't2') return t.tier === 'Tier 2';
+    if (filter === 'long') return t.side === 'Long';
+    if (filter === 'short') return t.side === 'Short';
+    return true;
+  });
+}
+
+function render() {
+  const list = getFiltered();
+  const longs = list.filter(t => t.side === 'Long').length;
+  const shorts = list.filter(t => t.side === 'Short').length;
+  document.getElementById('counts').textContent = list.length + ' setups — ' + longs + ' long, ' + shorts + ' short';
+
+  let html = '';
+  for (const t of list) {
+    const is1 = t.tier === 'Tier 1';
+    const is2 = t.tier === 'Tier 2';
+    const sc = t.side === 'Long' ? 'long' : 'short';
+    const bc = is1 ? 'b1' : is2 ? 'b2' : 'b3';
+    const tl = is1 ? '1' : is2 ? '2' : '3';
+    html += `<tr class="${is1 ? 't1' : ''}">
+      <td><span class="badge ${bc}">${tl}</span></td>
+      <td class="ticker">${t.ticker}</td>
+      <td class="${sc}">${t.side}</td>
+      <td class="r">${t.entry}</td>
+      <td class="r" style="color:var(--red)">${t.stop}</td>
+      <td class="r" style="color:var(--green)">${t.t1}</td>
+      <td class="r" style="color:var(--green)">${t.t2}</td>
+    </tr>`;
+  }
+  document.getElementById('tbody').innerHTML = html || '<tr><td colspan="7" class="empty">No setups</td></tr>';
+}
+
+render();
+fetchData();
+if (REFRESH > 0) setInterval(fetchData, REFRESH);
+</script>
+</body>
+</html>
